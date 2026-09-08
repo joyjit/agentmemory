@@ -59,6 +59,27 @@ export function captureOutputMax(): number {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : 8000;
 }
 
+/** Truncate so the result length is at most `max` (marker included). */
+export function truncateCaptureOutput(value: unknown, max: number): unknown {
+  if (typeof value === "string" && value.length > max) {
+    const suffix = "\n[...truncated]";
+    return max <= suffix.length
+      ? suffix.slice(0, max)
+      : value.slice(0, max - suffix.length) + suffix;
+  }
+  if (typeof value === "object" && value !== null) {
+    const str = JSON.stringify(value);
+    if (str.length > max) {
+      const suffix = "...[truncated]";
+      return max <= suffix.length
+        ? suffix.slice(0, max)
+        : str.slice(0, max - suffix.length) + suffix;
+    }
+    return value;
+  }
+  return value;
+}
+
 export function preCompactBudget(): number {
   const raw = process.env["AGENTMEMORY_PRE_COMPACT_BUDGET"];
   if (raw?.trim() === "0") return 0;

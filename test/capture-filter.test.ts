@@ -4,6 +4,7 @@ import {
   captureOutputMax,
   preCompactBudget,
   shouldCaptureTool,
+  truncateCaptureOutput,
 } from "../src/hooks/_capture-filter.js";
 
 describe("bareToolName", () => {
@@ -89,6 +90,32 @@ describe("captureOutputMax", () => {
   it("reads a positive override", () => {
     process.env[key] = "4096";
     expect(captureOutputMax()).toBe(4096);
+  });
+});
+
+describe("truncateCaptureOutput", () => {
+  it("leaves short strings alone", () => {
+    expect(truncateCaptureOutput("hello", 20)).toBe("hello");
+  });
+
+  it("keeps truncated string length within max", () => {
+    const out = truncateCaptureOutput("ABCDEFGHIJKLMNOPQRSTUVWXYZ", 20);
+    expect(typeof out).toBe("string");
+    expect((out as string).length).toBe(20);
+    expect(out).toBe("ABCDE\n[...truncated]");
+  });
+
+  it("handles max smaller than the marker", () => {
+    expect(truncateCaptureOutput("ABCDEFGHIJKLMNOPQRSTUVWXYZ", 5)).toBe(
+      "\n[...",
+    );
+  });
+
+  it("keeps truncated JSON length within max", () => {
+    const out = truncateCaptureOutput({ a: "x".repeat(50) }, 30);
+    expect(typeof out).toBe("string");
+    expect((out as string).length).toBe(30);
+    expect(out).toMatch(/\.\.\.\[truncated\]$/);
   });
 });
 

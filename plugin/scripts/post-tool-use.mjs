@@ -46,6 +46,22 @@ function captureOutputMax() {
 	const parsed = Number.parseInt(raw, 10);
 	return Number.isFinite(parsed) && parsed > 0 ? parsed : 8e3;
 }
+/** Truncate so the result length is at most `max` (marker included). */
+function truncateCaptureOutput(value, max) {
+	if (typeof value === "string" && value.length > max) {
+		const suffix = "\n[...truncated]";
+		return max <= 15 ? suffix.slice(0, max) : value.slice(0, max - 15) + suffix;
+	}
+	if (typeof value === "object" && value !== null) {
+		const str = JSON.stringify(value);
+		if (str.length > max) {
+			const suffix = "...[truncated]";
+			return max <= 14 ? suffix.slice(0, max) : str.slice(0, max - 14) + suffix;
+		}
+		return value;
+	}
+	return value;
+}
 //#endregion
 //#region src/hooks/_project.ts
 function resolveProject(cwd) {
@@ -120,7 +136,7 @@ async function main() {
 			data: {
 				tool_name: toolName,
 				tool_input: toolInput,
-				tool_output: truncate(cleanOutput, outputMax),
+				tool_output: truncateCaptureOutput(cleanOutput, outputMax),
 				...imageData ? { image_data: imageData } : {}
 			}
 		}),
@@ -164,17 +180,6 @@ function extractImageData(output) {
 		cleanOutput: output
 	};
 }
-function truncate(value, max) {
-	if (typeof value === "string" && value.length > max) return value.slice(0, max) + "\n[...truncated]";
-	if (typeof value === "object" && value !== null) {
-		const str = JSON.stringify(value);
-		if (str.length > max) return str.slice(0, max) + "...[truncated]";
-		return value;
-	}
-	return value;
-}
 main().catch(() => process.exit(0));
 //#endregion
 export {};
-
-//# sourceMappingURL=post-tool-use.mjs.map
